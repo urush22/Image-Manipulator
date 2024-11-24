@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Downloader</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            color: #1a73e8;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .tab-button {
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 8px;
+            background-color: #fff;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .tab-button.active {
+            background-color: #1a73e8;
+            color: white;
+        }
+
+        .form-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .form-group input[type="file"] {
+            padding: 0.5rem;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 1rem;
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            background-color: #1557b0;
+        }
+
+        .message {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        #bulkUploadForm {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Image Downloader</h1>
+            <p>Download single images or bulk process from CSV</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="showForm('singleUpload')">Single Image</button>
+            <button class="tab-button" onclick="showForm('bulkUpload')">Bulk Upload</button>
+        </div>
+
+        <div class="form-container">
+            <form id="singleUploadForm" action="/download_single" method="POST">
+                <div class="form-group">
+                    <label for="imageUrl">Image URL:</label>
+                    <input type="url" id="imageUrl" name="imageUrl" required>
+                </div>
+                <div class="form-group">
+                    <label for="fileName">File Name:</label>
+                    <input type="text" id="fileName" name="fileName" required>
+                </div>
+                <div class="form-group">
+                    <label for="width">Width (optional):</label>
+                    <input type="number" id="width" name="width" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="height">Height (optional):</label>
+                    <input type="number" id="height" name="height" min="0">
+                </div>
+                <button type="submit" class="submit-btn">Download Image</button>
+            </form>
+
+            <form id="bulkUploadForm" action="/download_bulk" method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="csvFile">Upload CSV File:</label>
+                    <input type="file" id="csvFile" name="csvFile" accept=".csv" required>
+                </div>
+                <div class="form-group">
+                    <label for="widthCsv">Width (optional):</label>
+                    <input type="number" id="widthCsv" name="widthCsv" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="heightCsv">Height (optional):</label>
+                    <input type="number" id="heightCsv" name="heightCsv" min="0">
+                </div>
+                <button type="submit" class="submit-btn">Process CSV</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function showForm(formId) {
+            const singleForm = document.getElementById('singleUploadForm');
+            const bulkForm = document.getElementById('bulkUploadForm');
+            const tabs = document.querySelectorAll('.tab-button');
+
+            if (formId === 'singleUpload') {
+                singleForm.style.display = 'block';
+                bulkForm.style.display = 'none';
+                tabs[0].classList.add('active');
+                tabs[1].classList.remove('active');
+            } else {
+                singleForm.style.display = 'none';
+                bulkForm.style.display = 'block';
+                tabs[0].classList.remove('active');
+                tabs[1].classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>
