@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Downloader</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 1rem;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            color: #2980b9;
+            border-bottom: 2px solid #2980b9;
+            margin-bottom: -2px;
+        }
+
+        .form-container {
+            background: #f9f9f9;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .btn {
+            background: #2980b9;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #2471a3;
+        }
+
+        .status {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        .results-table {
+            width: 100%;
+            margin-top: 1rem;
+            border-collapse: collapse;
+        }
+
+        .results-table th,
+        .results-table td {
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        .results-table th {
+            background: #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Image Downloader</h1>
+            <p>Download single images or bulk process from CSV</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="single">Single Image</button>
+            <button class="tab" data-tab="bulk">Bulk Upload</button>
+        </div>
+
+        <div class="form-container">
+            <div class="form-section active" id="single-form">
+                <div class="form-group">
+                    <label for="imageUrl">Image URL:</label>
+                    <input type="text" id="imageUrl" placeholder="https://example.com/image.jpg">
+                </div>
+                <div class="form-group">
+                    <label for="fileName">File Name:</label>
+                    <input type="text" id="fileName" placeholder="image.jpg">
+                </div>
+                <div class="form-group">
+                    <label for="width">Width (optional):</label>
+                    <input type="number" id="width" placeholder="Enter width in pixels">
+                </div>
+                <div class="form-group">
+                    <label for="height">Height (optional):</label>
+                    <input type="number" id="height" placeholder="Enter height in pixels">
+                </div>
+                <button class="btn" onclick="downloadSingle()">Download Image</button>
+                <div id="single-status" class="status"></div>
+            </div>
+
+            <div class="form-section" id="bulk-form">
+                <div class="form-group">
+                    <label for="csvFile">Upload CSV File:</label>
+                    <input type="file" id="csvFile" accept=".csv">
+                </div>
+                <div class="form-group">
+                    <label for="widthCsv">Width (optional):</label>
+                    <input type="number" id="widthCsv" placeholder="Enter width in pixels">
+                </div>
+                <div class="form-group">
+                    <label for="heightCsv">Height (optional):</label>
+                    <input type="number" id="heightCsv" placeholder="Enter height in pixels">
+                </div>
+                <button class="btn" onclick="processCsv()">Process CSV</button>
+                <div id="bulk-status" class="status"></div>
+                <div id="results-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(`${tab.dataset.tab}-form`).classList.add('active');
+            });
+        });
+
+        // Single image download
+        async function downloadSingle() {
+            const imageUrl = document.getElementById('imageUrl').value;
+            const fileName = document.getElementById('fileName').value;
+            const width = document.getElementById('width').value;
+            const height = document.getElementById('height').value;
+            const statusElement = document.getElementById('single-status');
+
+            if (!imageUrl || !fileName) {
+                showStatus('single-status', 'Please provide both image URL and file name', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(imageUrl);
+                if (!response.ok) throw new Error('Failed to fetch image');
+                
+                const blob = await response.blob();
+                let img = await createImageBitmap(blob);
+
+                // Resize if dimensions provided
+                if (width && height) {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = parseInt(width);
+                    canvas.height = parseInt(height);
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const resizedBlob = await new Promise(resolve => {
+                        canvas.toBlob(resolve, 'image/jpeg');
+                    });
+                    img = resizedBlob;
+                }
+
+                // Trigger download
+                const downloadUrl = URL.createObjectURL(img);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(downloadUrl);
+
+                showStatus('single-status', 'Image downloaded successfully', 'success');
+            } catch (error) {
+                showStatus('single-status', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        // CSV processing
+        async function processCsv() {
+            const csvFile = document.getElementById('csvFile').files[0];
+            const width = document.getElementById('widthCsv').value;
+            const height = document.getElementById('heightCsv').value;
+            const resultsContainer = document.getElementById('results-container');
+
+            if (!csvFile) {
+                showStatus('bulk-status', 'Please select a CSV file', 'error');
+                return;
+            }
+
+            try {
+                const text = await csvFile.text();
+                const rows = text.split('\n').map(row => row.split(','));
+                const headers = rows[0];
+                const urlIndex = headers.findIndex(h => h.trim().toLowerCase() === 'image_url');
+                const nameIndex = headers.findIndex(h => h.trim().toLowerCase() === 'image_name');
+
+                if (urlIndex === -1) {
+                    throw new Error('CSV must contain an "image_url" column');
+                }
+
+                resultsContainer.innerHTML = `
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th>File</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-body">
+                        </tbody>
+                    </table>
+                `;
+
+                const tbody = document.getElementById('results-body');
+
+                for (let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    if (!row[urlIndex]) continue;
+
+                    const imageUrl = row[urlIndex].trim();
+                    const fileName = nameIndex !== -1 && row[nameIndex] 
+                        ? `${row[nameIndex].trim()}.jpg`
+                        : `image_${i}.jpg`;
+
+                    try {
+                        await downloadImage(imageUrl, fileName, width, height);
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${fileName}</td>
+                                <td style="color: green;">Success</td>
+                            </tr>
+                        `;
+                    } catch (error) {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${fileName}</td>
+                                <td style="color: red;">Error: ${error.message}</td>
+                            </tr>
+                        `;
+                    }
+                }
+
+                showStatus('bulk-status', 'CSV processing completed', 'success');
+            } catch (error) {
+                showStatus('bulk-status', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Helper functions
+        async function downloadImage(url, fileName, width, height) {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Failed to fetch image');
+            
+            const blob = await response.blob();
+            let img = await createImageBitmap(blob);
+
+            if (width && height) {
+                const canvas = document.createElement('canvas');
+                canvas.width = parseInt(width);
+                canvas.height = parseInt(height);
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                const resizedBlob = await new Promise(resolve => {
+                    canvas.toBlob(resolve, 'image/jpeg');
+                });
+                img = resizedBlob;
+            }
+
+            const downloadUrl = URL.createObjectURL(img);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(downloadUrl);
+        }
+
+        function showStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${type}`;
+        }
+    </script>
+</body>
+</html>
